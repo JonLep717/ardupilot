@@ -98,6 +98,8 @@ extern const AP_HAL::HAL& hal;
 #define   STATUS_RETURN_ALL  2
 
 #define REG_GOAL_POSITION 116
+#define REG_GOAL_CURRENT 102
+#define REG_GOAL_VELOCITY 104
 
 // how many times to send servo configure msgs
 #define CONFIGURE_SERVO_COUNT 4
@@ -295,11 +297,27 @@ void AP_RobotisServo::configure_servos(void)
     // disable torque control
     send_command(BROADCAST_ID, REG_TORQUE_ENABLE, 0, 1);
 
-        // disable replies unless we read
+    // disable replies unless we read
     send_command(BROADCAST_ID, REG_STATUS_RETURN, STATUS_RETURN_READ, 1);
 
     // use position control mode
-    send_command(BROADCAST_ID, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    // send_command(BROADCAST_ID, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    send_command(1, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    send_command(2, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    send_command(3, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    send_command(4, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    send_command(5, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    send_command(6, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    send_command(7, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    send_command(8, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    send_command(9, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    send_command(11, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    send_command(13, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    send_command(15, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    send_command(10, REG_OPERATING_MODE, OPMODE_CURR_CONTROL, 1);
+    send_command(12, REG_OPERATING_MODE, OPMODE_CURR_CONTROL, 1);
+    send_command(14, REG_OPERATING_MODE, OPMODE_CURR_CONTROL, 1);
+    send_command(16, REG_OPERATING_MODE, OPMODE_CURR_CONTROL, 1);
 
     // enable torque control
     send_command(BROADCAST_ID, REG_TORQUE_ENABLE, 1, 1);
@@ -309,7 +327,7 @@ void AP_RobotisServo::configure_servos(void)
 /*
   send a command to a single servo, changing a register value
  */
-void AP_RobotisServo::send_command(uint8_t id, uint16_t reg, uint32_t value, uint8_t len)
+void AP_RobotisServo::send_command(uint8_t id, uint16_t reg, int32_t value, uint8_t len)
 {
     uint8_t txpacket[16] {};
 
@@ -453,7 +471,15 @@ void AP_RobotisServo::update()
         const uint16_t min = c->get_output_min();
         const uint16_t max = c->get_output_max();
         float v = float(pwm - min) / (max - min);
-        uint32_t value = pos_min + v * (pos_max - pos_min);
-        send_command(i+1, REG_GOAL_POSITION, value, 4);
+        int32_t value = 0;
+        if (i+1 == 10 || i+1 == 12 || i+1 == 14 || i+1 == 16) {
+        	value = -200 + v * (200 - (-200));
+        	hal.console->printf("SERVO %u: %ld \n",i+1, value);
+        	send_command(i+1, REG_GOAL_CURRENT, value, 2);
+        }
+        else {
+            value = pos_min + v * (pos_max - pos_min);
+            send_command(i+1, REG_GOAL_POSITION, value, 4);
+        }
     }
 }

@@ -47,7 +47,7 @@ private:
     void send_packet(uint8_t *txpacket);
     void read_bytes();
     void process_packet(const uint8_t *pkt, uint8_t length);
-    void send_command(uint8_t id, uint16_t reg, uint32_t value, uint8_t len);
+    void send_command(uint8_t id, uint16_t reg, int32_t value, uint8_t len);
     void configure_servos(void);
 
     // auto-detected mask of available servos, from a broadcast ping
