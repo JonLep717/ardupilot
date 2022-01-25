@@ -473,8 +473,10 @@ void AP_RobotisServo::update()
         float v = float(pwm - min) / (max - min);
         int32_t value = 0;
         if (i+1 == 10 || i+1 == 12 || i+1 == 14 || i+1 == 16) {
-        	value = -200 + v * (200 - (-200));
-        	hal.console->printf("SERVO %u: %ld \n",i+1, value);
+        	if (pwm < 1400 || pwm > 1600) {
+            	value = -200 + v * (200 - (-200));
+            	// hal.console->printf("SERVO %u: %ld \n",i+1, value);
+        	}
         	send_command(i+1, REG_GOAL_CURRENT, value, 2);
         }
         else {
