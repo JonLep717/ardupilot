@@ -122,6 +122,13 @@ const AP_Param::GroupInfo AP_RobotisServo::var_info[] = {
     // @Range: 0 4095
     // @User: Standard
     AP_GROUPINFO("POSMAX",  2, AP_RobotisServo, pos_max, 4095),
+
+    // @Param: CURMAX
+    // @DisplayName: Retraction Servo Maximum Current
+    // @Description: Magnitude of retraction servo current, 0 to 1027, Default - 100
+    // @Range: 0 1027
+    // @User: Standard
+    AP_GROUPINFO("CURMAX",  3, AP_RobotisServo, cur_max, 100),
     
     AP_GROUPEND
 };
@@ -300,24 +307,18 @@ void AP_RobotisServo::configure_servos(void)
     // disable replies unless we read
     send_command(BROADCAST_ID, REG_STATUS_RETURN, STATUS_RETURN_READ, 1);
 
-    // use position control mode
+    // initialize modes
     // send_command(BROADCAST_ID, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
-    send_command(1, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
-    send_command(2, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
-    send_command(3, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
-    send_command(4, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
-    send_command(5, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
-    send_command(6, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
-    send_command(7, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
-    send_command(8, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
-    send_command(9, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
-    send_command(11, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
-    send_command(13, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
-    send_command(15, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
-    send_command(10, REG_OPERATING_MODE, OPMODE_CURR_CONTROL, 1);
-    send_command(12, REG_OPERATING_MODE, OPMODE_CURR_CONTROL, 1);
-    send_command(14, REG_OPERATING_MODE, OPMODE_CURR_CONTROL, 1);
-    send_command(16, REG_OPERATING_MODE, OPMODE_CURR_CONTROL, 1);
+    for(uint8_t i = 0; i < NUM_SERVO_CHANNELS; i++) {
+    	if (i+1 == 10 || i+1 == 12 || i+1 == 14 || i+1 == 16) {
+    		send_command(i+1, REG_OPERATING_MODE, OPMODE_CURR_CONTROL, 1);
+    		op_mode[i] = OPMODE_CURR_CONTROL;
+    	}
+    	else {
+    		send_command(i+1, REG_OPERATING_MODE, OPMODE_POS_CONTROL, 1);
+    		op_mode[i] = OPMODE_POS_CONTROL;
+    	}
+    }
 
     // enable torque control
     send_command(BROADCAST_ID, REG_TORQUE_ENABLE, 1, 1);
@@ -472,9 +473,10 @@ void AP_RobotisServo::update()
         const uint16_t max = c->get_output_max();
         float v = float(pwm - min) / (max - min);
         int32_t value = 0;
+
         if (i+1 == 10 || i+1 == 12 || i+1 == 14 || i+1 == 16) {
         	if (pwm < 1400 || pwm > 1600) {
-            	value = -200 + v * (200 - (-200));
+            	value = -cur_max + v * (cur_max - (-cur_max));
             	// hal.console->printf("SERVO %u: %ld \n",i+1, value);
         	}
         	send_command(i+1, REG_GOAL_CURRENT, value, 2);
