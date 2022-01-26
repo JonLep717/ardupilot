@@ -49,6 +49,7 @@ private:
     void process_packet(const uint8_t *pkt, uint8_t length);
     void send_command(uint8_t id, uint16_t reg, int32_t value, uint8_t len);
     void configure_servos(void);
+    void reconfig_servo(uint8_t id, uint8_t mode);
 
     // auto-detected mask of available servos, from a broadcast ping
     uint16_t servo_mask;

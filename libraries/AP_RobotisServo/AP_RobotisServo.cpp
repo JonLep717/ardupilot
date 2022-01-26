@@ -325,6 +325,15 @@ void AP_RobotisServo::configure_servos(void)
 }
 
 
+void AP_RobotisServo::reconfig_servo(uint8_t id, uint8_t mode) {
+	// Reconfigurating the operating mode of servo
+	send_command(id, REG_TORQUE_ENABLE, 0, 1);
+	send_command(id, REG_OPERATING_MODE, mode, 1);
+	send_command(id, REG_TORQUE_ENABLE, 1, 1);
+	op_mode[id-1] = mode;
+}
+
+
 /*
   send a command to a single servo, changing a register value
  */
@@ -474,12 +483,17 @@ void AP_RobotisServo::update()
         float v = float(pwm - min) / (max - min);
         int32_t value = 0;
 
-        if (i+1 == 10 || i+1 == 12 || i+1 == 14 || i+1 == 16) {
-        	if (pwm < 1400 || pwm > 1600) {
-            	value = -cur_max + v * (cur_max - (-cur_max));
-            	// hal.console->printf("SERVO %u: %ld \n",i+1, value);
+        if (i+1 == 10 || i+1 == 12 || i+1 == 14 || i+1 == 16) { 									// Check that servo is a retraction servo
+        	if (pwm < 1400 || pwm > 1600) {            												// Check that pwm is out of deadzone
+				if (op_mode[i] != OPMODE_CURR_CONTROL) { reconfig_servo(i+1, OPMODE_CURR_CONTROL); } // Check that servo is in curr mode, if not, reconfigure
+				value = -cur_max + v * (cur_max - (-cur_max));
+				send_command(i+1, REG_GOAL_CURRENT, value, 2);
         	}
-        	send_command(i+1, REG_GOAL_CURRENT, value, 2);
+        	else {
+        		if (op_mode[i] != OPMODE_POS_CONTROL) { reconfig_servo(i+1, OPMODE_POS_CONTROL); } // Check that servo is in pos mode, if not, reconfigure
+				value = pos_min + v * (pos_max - pos_min);
+				send_command(i+1, REG_GOAL_POSITION, value, 4);
+        	}
         }
         else {
             value = pos_min + v * (pos_max - pos_min);
