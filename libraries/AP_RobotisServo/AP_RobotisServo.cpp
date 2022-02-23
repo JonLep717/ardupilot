@@ -489,11 +489,7 @@ void AP_RobotisServo::update()
 				value = -cur_max + v * (cur_max - (-cur_max));
 				send_command(i+1, REG_GOAL_CURRENT, value, 2);
         	}
-        	else {
-        		if (op_mode[i] != OPMODE_POS_CONTROL) { reconfig_servo(i+1, OPMODE_POS_CONTROL); } // Check that servo is in pos mode, if not, reconfigure
-				value = pos_min + v * (pos_max - pos_min);
-				send_command(i+1, REG_GOAL_POSITION, value, 4);
-        	}
+        	else if(op_mode[i] != OPMODE_POS_CONTROL) { reconfig_servo(i+1, OPMODE_POS_CONTROL); } // Check that servo is in pos mode, if not, reconfigure. Position will be held automatically
         }
         else {
             value = pos_min + v * (pos_max - pos_min);
