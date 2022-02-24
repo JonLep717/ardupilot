@@ -486,8 +486,7 @@ void AP_RobotisServo::update()
         if (i+1 == 10 || i+1 == 12 || i+1 == 14 || i+1 == 16) { 									// Check that servo is a retraction servo
         	if (pwm < 1400 || pwm > 1600) {            												// Check that pwm is out of deadzone
 				if (op_mode[i] != OPMODE_CURR_CONTROL) { reconfig_servo(i+1, OPMODE_CURR_CONTROL); } // Check that servo is in curr mode, if not, reconfigure
-				value = -cur_max + v * (cur_max - (-cur_max));
-				send_command(i+1, REG_GOAL_CURRENT, value, 2);
+				if ( pwm < 1500 ) {send_command(i+1, REG_GOAL_CURRENT, -cur_max, 2);} else { send_command(i+1, REG_GOAL_CURRENT, cur_max, 2); }
         	}
         	else if(op_mode[i] != OPMODE_POS_CONTROL) { reconfig_servo(i+1, OPMODE_POS_CONTROL); } // Check that servo is in pos mode, if not, reconfigure. Position will be held automatically
         }
