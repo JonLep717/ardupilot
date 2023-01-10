@@ -1,163 +1,234 @@
-# ArduPilot Project
+### ArduPilot UUV Project
 
-<a href="https://ardupilot.org/discord"><img src="https://img.shields.io/discord/674039678562861068.svg" alt="Discord">
+## History of Changes
+# 1. Adding the Custom MotorMatrix
+- **File Changed: AP_Motors_Class.h**
 
-[![Test Copter](https://github.com/ArduPilot/ardupilot/workflows/test%20copter/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/ardupilot/actions/workflows/test_sitl_copter.yml) [![Test Plane](https://github.com/ArduPilot/ardupilot/workflows/test%20plane/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/ardupilot/actions/workflows/test_sitl_plane.yml) [![Test Rover](https://github.com/ArduPilot/ardupilot/workflows/test%20rover/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/ardupilot/actions/workflows/test_sitl_rover.yml) [![Test Sub](https://github.com/ArduPilot/ardupilot/workflows/test%20sub/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/ardupilot/actions/workflows/test_sitl_sub.yml) [![Test Tracker](https://github.com/ArduPilot/ardupilot/workflows/test%20tracker/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/ardupilot/actions/workflows/test_sitl_tracker.yml)
+Add another parameter to the motor class in line 77-78, specific to the UUV
+```
+// UUV specified
+MOTOR_FRAME_UUV = 18;
+```
 
-[![Test AP_Periph](https://github.com/ArduPilot/ardupilot/workflows/test%20ap_periph/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/ardupilot/actions/workflows/test_sitl_periph.yml) [![Test Chibios](https://github.com/ArduPilot/ardupilot/workflows/test%20chibios/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/ardupilot/actions/workflows/test_chibios.yml) [![Test Linux SBC](https://github.com/ArduPilot/ardupilot/workflows/test%20Linux%20SBC/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/ardupilot/actions/workflows/test_linux_sbc.yml) [![Test Replay](https://github.com/ArduPilot/ardupilot/workflows/test%20replay/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/ardupilot/actions/workflows/test_replay.yml)
+- **File Changed: AP_MotorsMatrix.cpp**
 
-[![Test Unit Tests](https://github.com/ArduPilot/ardupilot/workflows/test%20unit%20tests/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/ardupilot/actions/workflows/test_unit_tests.yml) [![test size](https://github.com/ArduPilot/ardupilot/actions/workflows/test_size.yml/badge.svg)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_size.yml)
+Define the motor matrix for the UUV in lines 867-900
+```
+#if AP_MOTORS_FRAME_UUV_ENABLED
+	case MOTOR_FRAME_UUV:
+		_frame_class_string = "UUV";
+		_mav_type = MAV_TYPE_OCTOROTOR;
+		switch (frame_type) {
+			case MOTOR_FRAME_TYPE_PLUS:{
+				_frame_type_string = "PLUS";
+				add_motor_raw(0, 0.0f, 0.0f, -1.0f, 0, 1.0f); // esc1 - motor 1
+				add_motor_raw(3, 0.0f, 0.0f, 1.0f, 3, 1.0f); // esc4 - motor 4
+				add_motor_raw(1, 0.0f, 0.0f, -1.0f, 1, 1.0f); // esc3 - motor 2
+				add_motor_raw(2, 0.0f, 0.0f, 1.0f, 2, 1.0f); // esc6 - motor 3
+				// add_motor_raw: (motor_num, roll_fac, pitch_fac, yaw_fac, testing_order, throttle_fac)
+				// propulsor : throttle_2
+				//add_motor_raw(1, 0.0f, 0.0f, 0.0f, 1, 0.1f); // motor5
+				//add_motor_raw(4, 0.0f, 0.0f, 0.0f, 4, 0.1f); // motor6
 
-[![Test Environment Setup](https://github.com/ArduPilot/ardupilot/actions/workflows/test_environment.yml/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_environment.yml)
+				// robtis servo(): repsonds to roll and pitch
+				add_motor_raw(4, -1.0f, -1.0f, 0.0f, 4, 0.0f); // 9 - motor 5
+				add_motor_raw(5, -1.0f, 1.0f, 0.0f, 5, 0.0f); // 11 - motor 6
+				add_motor_raw(6, -1.0f, 1.0f, 0.0f, 6, 0.0f); // 13 - motor 7
+				add_motor_raw(7, -1.0f, -1.0f, 0.0f, 7, 0.0f); // 15 - motor 8
 
-[![Cygwin Build](https://github.com/ArduPilot/ardupilot/actions/workflows/cygwin_build.yml/badge.svg)](https://github.com/ArduPilot/ardupilot/actions/workflows/cygwin_build.yml) [![Macos Build](https://github.com/ArduPilot/ardupilot/actions/workflows/macos_build.yml/badge.svg)](https://github.com/ArduPilot/ardupilot/actions/workflows/macos_build.yml)
+				success = true;
+				break;
+			}
+			default:
+				// dodeca-hexa frame class does not support this frame type
+				_frame_type_string = "UNSUPPORTED";
+				success = false;
+				break;
+		}
+		break;
+#endif // UUV ENABLED
+```
 
-[![Coverity Scan Build Status](https://scan.coverity.com/projects/5331/badge.svg)](https://scan.coverity.com/projects/ardupilot-ardupilot)
+- **File Changed: System.cpp**
 
-[![Test Coverage](https://github.com/ArduPilot/ardupilot/actions/workflows/test_coverage.yml/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_coverage.yml)
+Define the UUV motor frame for the system in line 451
 
-[![Autotest Status](https://autotest.ardupilot.org/autotest-badge.svg)](https://autotest.ardupilot.org/)
+```
+case AP_Motors::MOTOR_FRAME_UUV;
+```
 
-ArduPilot is the most advanced, full-featured, and reliable open source autopilot software available.
-It has been under development since 2010 by a diverse team of professional engineers, computer scientists, and community contributors.
-Our autopilot software is capable of controlling almost any vehicle system imaginable, from conventional airplanes, quad planes, multi-rotors, and helicopters to rovers, boats, balance bots, and even submarines.
-It is continually being expanded to provide support for new emerging vehicle types.
+# 2. Eliminate the coupling between roll & pitch and throttle & yaw
 
-## The ArduPilot project is made up of: ##
+- **File Changed: AP_MotorsMatrix.cpp**
 
-- ArduCopter: [code](https://github.com/ArduPilot/ardupilot/tree/master/ArduCopter), [wiki](https://ardupilot.org/copter/index.html)
+Line 220-223
 
-- ArduPlane: [code](https://github.com/ArduPilot/ardupilot/tree/master/ArduPlane), [wiki](https://ardupilot.org/plane/index.html)
+```
+const float compensation_gain = 1.0f; //get_compensation_gain(); // compensation for battery voltage and altitude
+roll_thrust = (_roll_in +_roll_in_ff*0.0f) * compensation_gain;
+pitch_thrust = (_pitch_in +_pitch_in_ff*0.0f) * compensation_gain;
+yaw_thrust = (_yaw_in + _yaw_in_ff*0.0f) * compensation_gain;
+```
+Line 335
 
-- Rover: [code](https://github.com/ArduPilot/ardupilot/tree/master/Rover), [wiki](https://ardupilot.org/rover/index.html)
+```
+if (i == 0 || i == 1 || i == 2 || i == 3) {
+```
 
-- ArduSub : [code](https://github.com/ArduPilot/ardupilot/tree/master/ArduSub), [wiki](http://ardusub.com/)
+Line 396
+```
+if (i == 0 || i == 1 || i == 2 || i == 3) {
+```
 
-- Antenna Tracker : [code](https://github.com/ArduPilot/ardupilot/tree/master/AntennaTracker), [wiki](https://ardupilot.org/antennatracker/index.html)
+- **File Changed: AC_AttitudeControl.cpp**
 
-## User Support & Discussion Forums ##
+Line 303-335
 
-- Support Forum: <https://discuss.ardupilot.org/>
+```
+void AC_AttitudeControl::input_euler_angle_roll_pitch_euler_rate_yaw_uuv(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds)
+{
+	// Convert from centidegrees on public interface to radians
+	float euler_roll_angle = radians(euler_roll_angle_cd * 0.01f);
+	float euler_pitch_angle = radians(euler_pitch_angle_cd * 0.01f);
+	float euler_yaw_rate = radians(euler_yaw_rate_cds * 0.01f);
 
-- Community Site: <https://ardupilot.org>
+	//const AP_AHRS &ahrs = AP::ahrs();
+	//_euler_angle_target.x = ahrs.roll;
+	//_euler_angle_target.y = ahrs.pitch;
+	//_euler_angle_target.z = ahrs.yaw;
 
-## Developer Information ##
+	Quaternion attitude_body;
+    _ahrs.get_quat_body_to_ned(attitude_body);
+	attitude_body.to_euler(_euler_angle_target.x, _euler_angle_target.y, _euler_angle_target.z);
 
-- Github repository: <https://github.com/ArduPilot/ardupilot>
+	const Vector3f euler_accel = {get_accel_roll_max_radss(), get_accel_pitch_max_radss(), get_accel_yaw_max_radss()};
 
-- Main developer wiki: <https://ardupilot.org/dev/>
+	 _euler_rate_target.x = input_shaping_angle(wrap_PI(euler_roll_angle - _euler_angle_target.x), _input_tc, euler_accel.x, _euler_rate_target.x, _dt);
+	 _euler_rate_target.y = input_shaping_angle(wrap_PI(euler_pitch_angle - _euler_angle_target.y), _input_tc, euler_accel.y, _euler_rate_target.y, _dt);
+	 _euler_rate_target.z = input_shaping_ang_vel(_euler_rate_target.z, euler_yaw_rate, euler_accel.z, _dt);
 
-- Developer discussion: <https://discuss.ardupilot.org>
+	 _ang_vel_body = _euler_rate_target;
+	 ang_vel_limit(_ang_vel_body, radians(_ang_vel_roll_max), radians(_ang_vel_pitch_max), radians(_ang_vel_yaw_max));
+	 _feedforward_scalar = 1.0f;
 
-- Developer chat: <https://discord.com/channels/ardupilot>
+	 Quaternion attitude_target_update;
+	 attitude_target_update.from_axis_angle(Vector3f{_euler_rate_target.x*_dt, _euler_rate_target.y*_dt, _euler_rate_target.z*_dt});
+	 _attitude_target = _attitude_target*attitude_target_update;
+	 _attitude_target.normalize();
+	 _attitude_ang_error = attitude_body.inverse()*_attitude_target;
 
-## Top Contributors ##
+}
+```
 
-- [Flight code contributors](https://github.com/ArduPilot/ardupilot/graphs/contributors)
-- [Wiki contributors](https://github.com/ArduPilot/ardupilot_wiki/graphs/contributors)
-- [Most active support forum users](https://discuss.ardupilot.org/u?order=post_count&period=quarterly)
-- [Partners who contribute financially](https://ardupilot.org/about/Partners)
+- **File Changed: AC_AttitudeControl.h**
 
-## How To Get Involved ##
+Lines 157-158
 
-- The ArduPilot project is open source and we encourage participation and code contributions: [guidelines for contributors to the ardupilot codebase](https://ardupilot.org/dev/docs/contributing.html)
+```
+// UUV customized
+    virtual void input_euler_angle_roll_pitch_euler_rate_yaw_uuv(float euler_roll_angle_cd, float euler_pitch_angle_cd, float euler_yaw_rate_cds);
+```
+# 3. Disable the pwm output for motors when disarmed
 
-- We have an active group of Beta Testers to help us improve our code: [release procedures](https://ardupilot.org/dev/docs/release-procedures.html)
+- **File Changed: AP_MotorsMatrix.cpp**
 
-- Desired Enhancements and Bugs can be posted to the [issues list](https://github.com/ArduPilot/ardupilot/issues).
+Line 146
 
-- Help other users with log analysis in the [support forums](https://discuss.ardupilot.org/)
+```
+AP_GROUPINFO("SAFE_DISARM", 23, AP_MotorsMulticopter, _disarm_disable_pwm, 1), // change 0 to 1
+```
 
-- Improve the wiki and chat with other [wiki editors on Discord #documentation](https://discord.com/channels/ardupilot)
+In Mission Planner, set MOT_SAFE_DISARM to 1
 
-- Contact the developers on one of the [communication channels](https://ardupilot.org/copter/docs/common-contact-us.html)
+# 4. Set the output pwm to be in the middle when started up
 
-## License ##
+- **File Changed: AP_Multicopter.cpp**
 
-The ArduPilot project is licensed under the GNU General Public
-License, version 3.
+Line 440
 
-- [Overview of license](https://dev.ardupilot.com/wiki/license-gplv3)
+```
+pwm_output = get_pwm_output_min() + 500.0f; // add 500.0f
+```
 
-- [Full Text](https://github.com/ArduPilot/ardupilot/blob/master/COPYING.txt)
+- **File Changed: AP_MotorMatrix.cpp
 
-## Maintainers ##
+Line 162-167
 
-ArduPilot is comprised of several parts, vehicles and boards. The list below
-contains the people that regularly contribute to the project and are responsible
-for reviewing patches on their specific area.
+```
+if (i == 0 || i == 1 || i == 2 || i == 3){
+    set_actuator_with_slew(_actuator[i], 0.5f);
+}
+else {
+    set_actuator_with_slew(_actuator[i], 0.0f);//actuator_spin_up_to_ground_idle());
+}
+```
 
-- [Andrew Tridgell](https://github.com/tridge):
-  - ***Vehicle***: Plane, AntennaTracker
-  - ***Board***: Pixhawk, Pixhawk2, PixRacer
-- [Francisco Ferreira](https://github.com/oxinarf):
-  - ***Bug Master***
-- [Grant Morphett](https://github.com/gmorph):
-  - ***Vehicle***: Rover
-- [Jacob Walser](https://github.com/jaxxzer):
-  - ***Vehicle***: Sub
-- [Lucas De Marchi](https://github.com/lucasdemarchi):
-  - ***Subsystem***: Linux
-- [Michael du Breuil](https://github.com/WickedShell):
-  - ***Subsystem***: Batteries
-  - ***Subsystem***: GPS
-  - ***Subsystem***: Scripting
-- [Peter Barker](https://github.com/peterbarker):
-  - ***Subsystem***: DataFlash, Tools
-- [Randy Mackay](https://github.com/rmackay9):
-  - ***Vehicle***: Copter, Rover, AntennaTracker
-- [Siddharth Purohit](https://github.com/bugobliterator):
-  - ***Subsystem***: CAN, Compass
-  - ***Board***: Cube*
-- [Tom Pittenger](https://github.com/magicrub):
-  - ***Vehicle***: Plane
-- [Bill Geyer](https://github.com/bnsgeyer):
-  - ***Vehicle***: TradHeli
-- [Chris Olson](https://github.com/ChristopherOlson):
-  - ***Vehicle***: TradHeli
-- [Emile Castelnuovo](https://github.com/emilecastelnuovo):
-  - ***Board***: VRBrain
-- [Georgii Staroselskii](https://github.com/staroselskii):
-  - ***Board***: NavIO
-- [Gustavo José de Sousa](https://github.com/guludo):
-  - ***Subsystem***: Build system
-- [Julien Beraud](https://github.com/jberaud):
-  - ***Board***: Bebop & Bebop 2
-- [Leonard Hall](https://github.com/lthall):
-  - ***Subsystem***: Copter attitude control and navigation
-- [Matt Lawrence](https://github.com/Pedals2Paddles):
-  - ***Vehicle***: 3DR Solo & Solo based vehicles
-- [Matthias Badaire](https://github.com/badzz):
-  - ***Subsystem***: FRSky
-- [Mirko Denecke](https://github.com/mirkix):
-  - ***Board***: BBBmini, BeagleBone Blue, PocketPilot
-- [Paul Riseborough](https://github.com/priseborough):
-  - ***Subsystem***: AP_NavEKF2
-  - ***Subsystem***: AP_NavEKF3
-- [Víctor Mayoral Vilches](https://github.com/vmayoral):
-  - ***Board***: PXF, Erle-Brain 2, PXFmini
-- [Amilcar Lucas](https://github.com/amilcarlucas):
-  - ***Subsystem***: Marvelmind
-- [Samuel Tabor](https://github.com/samuelctabor):
-  - ***Subsystem***: Soaring/Gliding
-- [Henry Wurzburg](https://github.com/Hwurzburg):
-  - ***Subsystem***: OSD
-  - ***Site***: Wiki
-- [Peter Hall](https://github.com/IamPete1):
-  - ***Vehicle***: Tailsitters
-  - ***Vehicle***: Sailboat
-  - ***Subsystem***: Scripting
-- [Andy Piper](https://github.com/andyp1per):
-  - ***Subsystem***: Crossfire
-  - ***Subsystem***: ESC
-  - ***Subsystem***: OSD
-  - ***Subsystem***: SmartAudio
-- [Alessandro Apostoli ](https://github.com/yaapu):
-  - ***Subsystem***: Telemetry
-  - ***Subsystem***: OSD
-- [Rishabh Singh ](https://github.com/rishabsingh3003):
-  - ***Subsystem***: Avoidance/Proximity
-- [David Bussenschutt ](https://github.com/davidbuzz):
-  - ***Subsystem***: ESP32,AP_HAL_ESP32
-- [Charles Villard ](https://github.com/Silvanosky):
-  - ***Subsystem***: ESP32,AP_HAL_ESP32
+# 5. Add trim for Rob servos (Motor 5-8) using servo trim input in Mission Planner
+
+- **File Changed: AP_MotorsMatrix
+Line 19
+
+```
+#include <SRV_Channel/SRV_Channel.h>
+```
+
+Line 171-178
+
+```
+if (motor_enabled[i]) {
+    if (i == 4 || i == 5 || i == 6 || i == 7){
+    _actuator[i] = _thrust_rpyt_out[i]; // scale combined pitch and roll inputs to +/- 2.0
+}
+else {
+    set_actuator_with_slew(_actuator[i], thrust_to_actuator(_thrust_rpyt_out[i]));
+}
+}
+```
+
+Line 183-215
+
+```
+// convert output to PWM and send to each motor
+    for (i = 0; i < AP_MOTORS_MAX_NUM_MOTORS; i++) {
+        if (motor_enabled[i]) {
+        	// motor 5
+        	if (i == 4){
+        		int16_t value;
+        		value = SRV_Channels::return_channel(SRV_Channel::k_motor5)->get_trim() + 500.0f * _actuator[i];
+        		rc_write(i, value);
+        	}
+        	// motor 6
+        	else if (i == 5){
+				int16_t value;
+				value = SRV_Channels::return_channel(SRV_Channel::k_motor6)->get_trim() + 500.0f * _actuator[i];
+				rc_write(i, value);
+        	}
+        	// motor 7
+        	else if (i == 6){
+				int16_t value;
+				value = SRV_Channels::return_channel(SRV_Channel::k_motor7)->get_trim() + 500.0f * _actuator[i];
+				rc_write(i, value);
+			}
+        	// motor 8
+        	else if (i == 7){
+				int16_t value;
+				value = SRV_Channels::return_channel(SRV_Channel::k_motor8)->get_trim() + 500.0f * _actuator[i];
+				rc_write(i, value);
+			}
+        	// others
+        	else {
+        		rc_write(i, output_to_pwm(_actuator[i]));
+        	}
+        }
+    }
+```
+
+- **File Change: SRV_Channels.h
+
+Line 468-469
+
+```
+// return channel that a function is assigned to
+    static SRV_Channel *return_channel(SRV_Channel::Aux_servo_function_t function);
+```
+
